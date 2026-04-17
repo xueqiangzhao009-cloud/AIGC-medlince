@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Evolution Visualizer - Demo</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --accent: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visualizer-container {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .circle-outer {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .circle-inner {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.2), rgba(0, 0, 0, 0));
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            transition: all 0.5s ease;
+        }
+
+        .pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            opacity: 0;
+            animation: pulse 2s infinite;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .results {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .result-label {
+            color: var(--text-muted);
+        }
+
+        .result-value {
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 1s ease-out;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading .circle-outer {
+            border-top-color: var(--primary);
+            border-left-color: var(--accent);
+            animation: spin 1s linear infinite;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Diabetes Visualizer</h1>
+            <p class="subtitle">AI-Powered Health Evolution Analysis</p>
+        </header>
+
+        <div class="card">
+            <div class="status-badge">System Ready</div>
+            
+            <div class="visualizer-container">
+                <div class="circle-outer" id="visualizerRing">
+                    <div class="pulse"></div>
+                    <div class="circle-inner" id="scoreDisplay">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn-secondary" id="resetBtn" disabled>Reset</button>
+                <button class="btn-primary" id="analyzeBtn">Analyze Health</button>
+            </div>
+
+            <div class="results" id="resultsPanel">
+                <div class="result-item">
+                    <span class="result-label">Risk Assessment</span>
+                    <span class="result-value" style="color: var(--success)">Low Risk</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85%"></div>
+                </div>
+                <br>
+                <div class="result-item">
+                    <span class="result-label">Metabolic Score</span>
+                    <span class="result-value">92/100</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Prediction Confidence</span>
+                    <span class="result-value">98.5%</span>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+                    AI analysis indicates stable glucose levels over the next 48 hours. Recommended to maintain current diet and exercise routine.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const visualizerRing = document.getElementById('visualizerRing');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const statusBadge = document.querySelector('.status-badge');
+
+        let isAnalyzing = false;
+
+        analyzeBtn.addEventListener('click', () => {
+            if (isAnalyzing) return;
+            isAnalyzing = true;
+            
+            // UI Updates for Loading
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Processing...';
+            resetBtn.disabled = true;
+            document.body.classList.add('loading');
+            visualizerRing.style.animation = 'spin 1.5s linear infinite';
+            scoreDisplay.innerHTML = '<span style="font-size: 1.5rem">...</span>';
+            statusBadge.textContent = 'Analyzing Data';
+            statusBadge.style.color = '#fbbf24';
+            statusBadge.style.background = 'rgba(251, 191, 36, 0.2)';
+            statusBadge.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+            resultsPanel.style.display = 'none';
+
+            // Simulate Analysis Delay
+            setTimeout(() => {
+                completeAnalysis();
+            }, 2500);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            isAnalyzing = false;
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = 'Analyze Health';
+            resetBtn.disabled = true;
+            
+            visualizerRing.style.animation = 'none';
+            scoreDisplay.innerHTML = `
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            `;
+            
+            statusBadge.textContent = 'System Ready';
+            statusBadge.style.color = '#10b981';
+            statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+            statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            
+            resultsPanel.style.display = 'none';
+        });
+
+        function completeAnalysis() {
+            document.body.classList.remove('loading');
+            visualizerRing.style.animation = 'none';
+            
+            // Show Score
+            let score = 0;
+            const targetScore = 92;
+            const interval = setInterval(() => {
+                score += 4;
+                if (score >= targetScore) {
+                    score = targetScore;
+                    clearInterval(interval);
+                    finishAnimation();
+                }
+                scoreDisplay.textContent = score;
+            }, 30);
+        }
+
+        function finishAnimation() {
+            resetBtn.disabled = false;
+            analyzeBtn.textContent = 'Analysis Complete';
+            
+            statusBadge.textContent = 'Analysis Complete';
+            statusBadge.style.color = '#3b82f6';
+            statusBadge.style.background = 'rgba(59, 130, 246, 0.2)';
+            statusBadge.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+
+            resultsPanel.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
